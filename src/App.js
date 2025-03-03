@@ -117,11 +117,12 @@ export default function App() {
           setIsLoading(true);
           setError("");
           const res = await fetch(
-            `http://www.omdbapi.com/?apikey=${KEY}&s=${query}`,
+            `https://www.omdbapi.com/?apikey=${KEY}&s=${query}`,
             { signal: controller.signal }
           );
           console.log(res);
-          if (!res.ok) throw new Error("Something went wrong");
+          if (!res.ok)
+            throw new Error("Something went wrong with fetch request");
 
           const data = await res.json();
           if (data.Response === "false") throw new Error("No results found");
@@ -130,7 +131,9 @@ export default function App() {
         } catch (err) {
           console.error(err);
           if (err.name !== "AbortError") {
-            setError(err.message);
+            setError(
+              err.message || "Failed to fetch movies. Please try again."
+            );
           }
         } finally {
           setIsLoading(false);
@@ -347,13 +350,20 @@ function MovieDetails({ selectedId, onCloseMovie, onAddWatched, watched }) {
   useEffect(
     function () {
       async function getMovieDetails() {
-        setIsLoading(true);
-        const res = await fetch(
-          `http://www.omdbapi.com/?apikey=${KEY}&i=${selectedId}`
-        );
-        const data = await res.json();
-        setMovie(data);
-        setIsLoading(false);
+        try {
+          setIsLoading(true);
+          const res = await fetch(
+            `https://www.omdbapi.com/?apikey=${KEY}&i=${selectedId}`
+          );
+          if (!res.ok) throw new Error("Failed to fetch movie details");
+
+          const data = await res.json();
+          setMovie(data);
+        } catch (err) {
+          console.error(err);
+        } finally {
+          setIsLoading(false);
+        }
       }
       getMovieDetails();
     },
